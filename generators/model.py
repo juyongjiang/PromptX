@@ -45,6 +45,8 @@ def gpt_completion(
         stop=stop_strs,
         n=num_comps,
     )
+    print(response)
+    # input('check completion usage!!')
     if num_comps == 1:
         return response.choices[0].text  # type: ignore
 
@@ -69,6 +71,9 @@ def gpt_chat(
         presence_penalty=0.0,
         n=num_comps,
     )
+    print(response)
+    # input('check chatcompletion usage!!')
+
     if num_comps == 1:
         return response.choices[0].message.content  # type: ignore
     print("temp", temperature)

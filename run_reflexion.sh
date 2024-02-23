@@ -1,7 +1,6 @@
-python main.py \
-  --run_name "test_reflexion_gpt3.5" \
+python main.py --run_name "test_reflexion_gpt3.5" \
   --root_dir "trajectory" \
-  --dataset_path ./benchmarks/humaneval-py.jsonl \
+  --dataset_path ./benchmarks/humaneval-py-test.jsonl \
   --strategy "reflexion" \
   --language "py" \
   --model "gpt-3.5-turbo-0613" \
@@ -12,7 +11,7 @@ python main.py \
 python main.py \
   --run_name "test_reflexion_gpt4" \
   --root_dir "trajectory" \
-  --dataset_path ./benchmarks/humaneval-py.jsonl \
+  --dataset_path ./benchmarks/humaneval-py-test.jsonl \
   --strategy "reflexion" \
   --language "py" \
   --model "gpt-4" \

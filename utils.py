@@ -9,16 +9,6 @@ from typing import List
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
-def make_printv(verbose: bool):
-    def print_v(*args, **kwargs):
-        if verbose:
-            kwargs["flush"] = True
-            print(*args, **kwargs)
-        else:
-            pass
-    return print_v
-
-
 def read_jsonl(path: str) -> List[dict]:
     if not os.path.exists(path):
         raise FileNotFoundError(f"File `{path}` does not exist.")
@@ -45,20 +35,28 @@ def read_jsonl_gz(path: str) -> List[dict]:
         data = [json.loads(line) for line in f]
     return data
 
+def make_printv(verbose: bool):
+    def print_v(*args, **kwargs):
+        if verbose:
+            kwargs["flush"] = True
+            print(*args, **kwargs)
+        else:
+            pass
+    return print_v
 
-# generator that returns the item and the index in the dataset.
-# if the results_path exists, it will skip all items that have been processed
-# before.
+# generator that returns the index and item in the dataset.
+# if the results_path exists, it will skip all items that have been processed before.
 def enumerate_resume(dataset, results_path):
     if not os.path.exists(results_path):
         for i, item in enumerate(dataset):
             yield i, item
     else:
+        # count the number of items in the results file
         count = 0
         with jsonlines.open(results_path) as reader:
             for item in reader:
                 count += 1
-
+        # yield the remaining items
         for i, item in enumerate(dataset):
             # skip items that have been processed before
             if i < count:
@@ -66,10 +64,11 @@ def enumerate_resume(dataset, results_path):
             yield i, item
 
 
-def resume_success_count(dataset) -> int:
+def resume_success_count(results_path) -> int:
     count = 0
-    for item in dataset:
-        if "is_solved" in item and item["is_solved"]:
-            count += 1
+    with jsonlines.open(results_path) as reader:
+        for item in reader:
+            if "is_solved" in item and item["is_solved"]:
+                count += 1
     return count
 

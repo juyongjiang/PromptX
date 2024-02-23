@@ -79,12 +79,10 @@ def generic_generate_func_impl(
     else:
         if strategy == "reflexion":
             prompt = f"{reflection_completion_instruction}\n{add_code_block(prev_func_impl)}\n\nunit tests:\n{feedback}\n\nhint:\n{self_reflection}\n\n# improved implementation\n{func_sig}\n{code_block_instruction}"
-            func_bodies = model.generate(
-                prompt, num_comps=num_comps, temperature=temperature)
+            func_bodies = model.generate(prompt, num_comps=num_comps, temperature=temperature)
         else:
             prompt = f"{simple_completion_instruction}\n{func_sig}\n{code_block_instruction}"
-            func_bodies = model.generate(
-                prompt, num_comps=num_comps, temperature=temperature)
+            func_bodies = model.generate(prompt, num_comps=num_comps, temperature=temperature)
 
     if num_comps == 1:
         assert isinstance(func_bodies, str)
