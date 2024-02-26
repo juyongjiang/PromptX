@@ -1,12 +1,8 @@
 import os
 import gzip
 import json
-import openai
 import jsonlines
-
 from typing import List
-
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 def read_jsonl(path: str) -> List[dict]:
@@ -20,20 +16,18 @@ def read_jsonl(path: str) -> List[dict]:
             items += [item]
     return items
 
-
-def write_jsonl(path: str, data: List[dict], append: bool = False):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with jsonlines.open(path, mode='a' if append else 'w') as writer:
-        for item in data:
-            writer.write(item)
-
-
 def read_jsonl_gz(path: str) -> List[dict]:
     if not path.endswith(".jsonl.gz"):
         raise ValueError(f"File `{path}` is not a jsonl.gz file.")
     with gzip.open(path, "rt") as f:
         data = [json.loads(line) for line in f]
     return data
+
+def write_jsonl(path: str, data: List[dict], append: bool = False):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with jsonlines.open(path, mode='a' if append else 'w') as writer:
+        for item in data:
+            writer.write(item)
 
 def make_printv(verbose: bool):
     def print_v(*args, **kwargs):
@@ -63,7 +57,6 @@ def enumerate_resume(dataset, results_path):
                 continue
             yield i, item
 
-
 def resume_success_count(results_path) -> int:
     count = 0
     with jsonlines.open(results_path) as reader:
@@ -71,4 +64,3 @@ def resume_success_count(results_path) -> int:
             if "is_solved" in item and item["is_solved"]:
                 count += 1
     return count
-

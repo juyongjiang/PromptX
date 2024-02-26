@@ -1,5 +1,6 @@
-from generators import model_factory, generator_factory
+from generators import generator_factory, model_factory
 from executors import executor_factory
+
 from utils import enumerate_resume, make_printv, write_jsonl, resume_success_count
 from typing import List
 
@@ -30,7 +31,7 @@ def run_reflexion(
         # important components
         implementations = [] # generated solutions
         test_feedback = [] # exectuion feedback
-        reflections = [] # questions + answers + execution feedback => self-reflection
+        reflections = [] # implementation + execution feedback => self-reflection
         
         while cur_pass < pass_at_k and not is_solved:
             # generate internal unit tests
@@ -73,7 +74,7 @@ def run_reflexion(
                 # prompt += cur_feedback
 
                 # apply self-reflection in the next attempt
-                # prompt + implementation + feedback + reflection => next implementation
+                # (prompt + implementation) + feedback + reflection => next implementation
                 #############Optimized Implementation#############
                 cur_func_impl = gen.func_impl(
                     func_sig=item["prompt"],

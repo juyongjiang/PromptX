@@ -1,6 +1,0 @@
-Starting run with the following parameters:
-                  strategy: reflexion
-                  pass@k: 1
-Loading the dataset...
-Loaded 3 examples
-Done! Check out the logs in `trajectory/test_reflexion_gpt3.5/humaneval-py-test._reflexion_8_gpt-3.5-turbo-0613_pass_at_k_1_py.jsonl`

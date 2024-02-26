@@ -1,8 +1,26 @@
+import os, json
+from typing import NamedTuple, List, Tuple
+from abc import ABC, abstractmethod
+
+
+class ExecuteResult(NamedTuple):
+    is_passing: bool
+    feedback: str
+    state: Tuple[bool]
+
+class Executor(ABC):
+    @abstractmethod
+    def execute(self, func: str, tests: List[str], timeout: int = 5) -> ExecuteResult:
+        ...
+
+    @abstractmethod
+    def evaluate(self, name: str, func: str, test: str, timeout: int = 5) -> bool:
+        ...
+
 
 def timeout_handler(_, __):
     raise TimeoutError()
 
-import os, json
 def to_jsonl(dict_data, file_path):
     with open(file_path, 'a') as file:
         json_line = json.dumps(dict_data)
@@ -30,18 +48,17 @@ class PropagatingThread(Thread):
 
 def function_with_timeout(func, args, timeout):
     result_container = []
-
     def wrapper():
         result_container.append(func(*args))
-
+        
     thread = PropagatingThread(target=wrapper)
     thread.start()
     thread.join(timeout)
-
     if thread.is_alive():
         raise TimeoutError()
     else:
         return result_container[0]
+
     
 # Py tests
 

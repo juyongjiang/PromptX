@@ -1,25 +1,22 @@
 from typing import List, Union, Optional, Literal
+import os
+import openai
+openai.api_key = os.getenv("OPENAI_API_KEY")
 import dataclasses
-
 from tenacity import (
     retry,
     stop_after_attempt,  # type: ignore
     wait_random_exponential,  # type: ignore
 )
-import openai
 
 MessageRole = Literal["system", "user", "assistant"]
-
-
 @dataclasses.dataclass()
 class Message():
     role: MessageRole
     content: str
 
-
 def message_to_str(message: Message) -> str:
     return f"{message.role}: {message.content}"
-
 
 def messages_to_str(messages: List[Message]) -> str:
     return "\n".join([message_to_str(message) for message in messages])
@@ -36,7 +33,7 @@ def gpt_completion(
 ) -> Union[List[str], str]:
     response = openai.Completion.create(
         model=model,
-        prompt=prompt,
+        prompt=prompt, # for completion, we only need prompt instead of messages
         temperature=temperature,
         max_tokens=max_tokens,
         top_p=1,
@@ -45,13 +42,9 @@ def gpt_completion(
         stop=stop_strs,
         n=num_comps,
     )
-    print(response)
-    # input('check completion usage!!')
     if num_comps == 1:
         return response.choices[0].text  # type: ignore
-
     return [choice.text for choice in response.choices]  # type: ignore
-
 
 @retry(wait=wait_random_exponential(min=1, max=180), stop=stop_after_attempt(6))
 def gpt_chat(
@@ -71,12 +64,8 @@ def gpt_chat(
         presence_penalty=0.0,
         n=num_comps,
     )
-    print(response)
-    # input('check chatcompletion usage!!')
-
     if num_comps == 1:
         return response.choices[0].message.content  # type: ignore
-    print("temp", temperature)
     return [choice.message.content for choice in response.choices]  # type: ignore
 
 
@@ -94,7 +83,6 @@ class ModelBase():
     def generate(self, prompt: str, max_tokens: int = 1024, stop_strs: Optional[List[str]] = None, temperature: float = 0.0, num_comps=1) -> Union[List[str], str]:
         raise NotImplementedError
 
-
 class GPTChat(ModelBase):
     def __init__(self, model_name: str):
         self.name = model_name
@@ -103,17 +91,6 @@ class GPTChat(ModelBase):
     def generate_chat(self, messages: List[Message], max_tokens: int = 1024, temperature: float = 0.2, num_comps: int = 1) -> Union[List[str], str]:
         return gpt_chat(self.name, messages, max_tokens, temperature, num_comps)
 
-
-class GPT4(GPTChat):
-    def __init__(self):
-        super().__init__("gpt-4")
-
-
-class GPT35(GPTChat):
-    def __init__(self):
-        super().__init__("gpt-3.5-turbo")
-
-
 class GPTDavinci(ModelBase):
     def __init__(self, model_name: str):
         self.name = model_name
@@ -121,12 +98,19 @@ class GPTDavinci(ModelBase):
     def generate(self, prompt: str, max_tokens: int = 1024, stop_strs: Optional[List[str]] = None, temperature: float = 0, num_comps=1) -> Union[List[str], str]:
         return gpt_completion(self.name, prompt, max_tokens, stop_strs, temperature, num_comps)
 
+class GPT4(GPTChat):
+    def __init__(self):
+        super().__init__("gpt-4")
+        
+class GPT35(GPTChat):
+    def __init__(self):
+        super().__init__("gpt-3.5-turbo")
+
 
 class HFModelBase(ModelBase):
     """
     Base for huggingface chat models
     """
-
     def __init__(self, model_name: str, model, tokenizer, eos_token_id=None):
         self.name = model_name
         self.model = model
@@ -134,12 +118,19 @@ class HFModelBase(ModelBase):
         self.eos_token_id = eos_token_id if eos_token_id is not None else self.tokenizer.eos_token_id
         self.is_chat = True
 
+    def prepare_prompt(self, messages: List[Message]):
+        raise NotImplementedError
+
+    def extract_output(self, output: str) -> str:
+        raise NotImplementedError
+
     def generate_chat(self, messages: List[Message], max_tokens: int = 1024, temperature: float = 0.2, num_comps: int = 1) -> Union[List[str], str]:
         # NOTE: HF does not like temp of 0.0.
         if temperature < 0.0001:
             temperature = 0.0001
 
-        prompt = self.prepare_prompt(messages)
+        # the prompt format of hugging face is different from openai, so we need prepare_prompt to process it
+        prompt = self.prepare_prompt(messages) 
 
         outputs = self.model.generate(
             prompt,
@@ -152,24 +143,17 @@ class HFModelBase(ModelBase):
             eos_token_id=self.eos_token_id,
             num_return_sequences=num_comps,
         )
-
         outs = self.tokenizer.batch_decode(outputs, skip_special_tokens=False)
         assert isinstance(outs, list)
         for i, out in enumerate(outs):
             assert isinstance(out, str)
-            outs[i] = self.extract_output(out)
+            # extract_output to process the output decoded by batch_decode and overwrite
+            outs[i] = self.extract_output(out) 
 
         if len(outs) == 1:
             return outs[0]  # type: ignore
         else:
             return outs  # type: ignore
-
-    def prepare_prompt(self, messages: List[Message]):
-        raise NotImplementedError
-
-    def extract_output(self, output: str) -> str:
-        raise NotImplementedError
-
 
 class StarChat(HFModelBase):
     def __init__(self):
@@ -190,15 +174,13 @@ class StarChat(HFModelBase):
         for i, message in enumerate(messages):
             prompt += f"<|{message.role}|>\n{message.content}\n<|end|>\n"
             if i == len(messages) - 1:
-                prompt += "<|assistant|>\n"
-
+                prompt += "<|assistant|>\n" # completion prompt
         return self.tokenizer.encode(prompt, return_tensors="pt").to(self.model.device)
 
     def extract_output(self, output: str) -> str:
         out = output.split("<|assistant|>")[1]
         if out.endswith("<|end|>"):
             out = out[:-len("<|end|>")]
-
         return out
 
 
@@ -210,7 +192,6 @@ class CodeLlama(HFModelBase):
 You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe. Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature.
 
 If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information."""
-
     def __init__(self, version: Literal["34b", "13b", "7b"] = "34b"):
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -229,13 +210,10 @@ If a question does not make any sense, or is not factually coherent, explain why
 
     def prepare_prompt(self, messages: List[Message]):
         if messages[0].role != "system":
-            messages = [
-                Message(role="system", content=self.DEFAULT_SYSTEM_PROMPT)
-            ] + messages
-        messages = [
-            Message(role=messages[1].role, content=self.B_SYS +
-                    messages[0].content + self.E_SYS + messages[1].content)
-        ] + messages[2:]
+            messages = [Message(role="system", content=self.DEFAULT_SYSTEM_PROMPT)] + messages
+        messages = [Message(role=messages[1].role, 
+                            content=self.B_SYS + messages[0].content + self.E_SYS + messages[1].content)] \
+                    + messages[2:]
         assert all([msg.role == "user" for msg in messages[::2]]) and all(
             [msg.role == "assistant" for msg in messages[1::2]]
         ), (

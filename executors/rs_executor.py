@@ -3,9 +3,7 @@ import signal
 import subprocess
 import json
 
-from .executor_utils import timeout_handler
-from .executor_types import ExecuteResult, Executor
-
+from .utils import timeout_handler, ExecuteResult, Executor
 from typing import List, Tuple, Optional
 
 

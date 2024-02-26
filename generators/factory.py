@@ -1,8 +1,9 @@
+from .model import ModelBase, CodeLlama, GPT4, GPT35, StarChat, GPTDavinci
+from .utils import Generator
+
 from .py_generate import PyGenerator
 from .rs_generate import RsGenerator
 from .go_generate import GoGenerator
-from .generator_types import Generator
-from .model import CodeLlama, ModelBase, GPT4, GPT35, StarChat, GPTDavinci
 
 
 def generator_factory(lang: str) -> Generator:
@@ -28,7 +29,7 @@ def model_factory(model_name: str) -> ModelBase:
         kwargs = {}
         if "-" in model_name:
             kwargs["version"] = model_name.split("-")[1]
-        return CodeLlama(**kwargs)
+        return CodeLlama(**kwargs) # add a specific version information
     elif model_name.startswith("text-davinci"):
         return GPTDavinci(model_name)
     else:

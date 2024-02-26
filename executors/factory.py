@@ -1,8 +1,9 @@
+from .utils import Executor
 from .py_executor import PyExecutor
 from .rs_executor import RsExecutor
 from .go_executor import GoExecutor
-from .executor_types import Executor
 from .leet_executor import LeetExecutor
+
 
 def executor_factory(lang: str, is_leet: bool = False) -> Executor:
     if lang == "py" or lang == "python":

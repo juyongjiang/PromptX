@@ -1,8 +1,7 @@
 import os
 import argparse
 from reflexion import run_reflexion
-from mcts import run_mcts
-from dfs import run_dfs
+from lats import run_mcts
 from utils import read_jsonl, read_jsonl_gz
 
 
@@ -32,10 +31,8 @@ def stragey_factory(strategy: str, **kwargs):
             del kwargs[key] # delete the key from the dictionary
     if strategy == "reflexion":
         return run_reflexion(**kwargs)
-    elif strategy == "mcts":
+    elif strategy == "lats":
         return run_mcts(**kwargs)
-    elif strategy == "dfs":
-        return run_dfs(**kwargs)
     else:
         raise ValueError(f"Strategy `{strategy}` is not supported")
 

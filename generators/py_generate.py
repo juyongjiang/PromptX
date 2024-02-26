@@ -1,6 +1,5 @@
 from generators.model import ModelBase, message_to_str
-from .generator_types import Generator
-from .generator_utils import generic_generate_func_impl, generic_generate_internal_tests, generic_generate_self_reflection, generate_with_accumulated_context
+from .utils import Generator, generic_generate_func_impl, generic_generate_internal_tests, generic_generate_self_reflection, generate_with_accumulated_context
 
 from typing import Optional, List, Union
 import ast
@@ -221,6 +220,9 @@ The implementation failed 4 out of the 7 test cases due to an IndexError. The is
 END OF EXAMPLES
 """
 
+################################
+# Unit test generation
+################################
 PY_TEST_GENERATION_FEW_SHOT = """Examples:
 func signature:
 def add3Numbers(x, y, z):
@@ -235,11 +237,9 @@ assert add3Numbers(1, 2, -3) == 0
 assert add3Numbers(-3, -2, -1) == -6
 assert add3Numbers(0, 0, 0) == 0
 """
-
 PY_TEST_GENERATION_COMPLETION_INSTRUCTION = f"""You are an AI coding assistant that can write unique, diverse, and intuitive unit tests for functions given the signature and docstring.
 
 {PY_TEST_GENERATION_FEW_SHOT}"""
-
 PY_TEST_GENERATION_CHAT_INSTRUCTION = """You are an AI coding assistant that can write unique, diverse, and intuitive unit tests for functions given the signature and docstring."""
 
 
@@ -310,6 +310,12 @@ class PyGenerator(Generator):
     def internal_tests(self, func_sig: str, model: ModelBase, max_num_tests: int = 12) -> List[str]:
         def parse_tests(tests: str) -> List[str]:
             return [test.strip() for test in tests.splitlines() if "assert" in test]
+        def py_is_syntax_valid(code: str) -> bool:
+            try:
+                ast.parse(code)
+                return True
+            except Exception:
+                return False
         """
         Generates tests for a function.
         """
@@ -323,82 +329,3 @@ class PyGenerator(Generator):
             parse_tests=parse_tests,
             is_syntax_valid=py_is_syntax_valid,
         )
-
-
-DUMMY_FUNC_SIG = "def func():"
-DUMMY_FUNC_CALL = "func()"
-
-
-def handle_first_line_indent(func_body: str) -> str:
-    if func_body.startswith("    "):
-        return func_body
-    split = func_body.splitlines()
-    return f"    {split[0]}\n" + "\n".join(split[1:])
-
-
-def handle_entire_body_indent(func_body: str) -> str:
-    split = func_body.splitlines()
-    res = "\n".join(["    " + line for line in split])
-    return res
-
-
-def fix_turbo_response(func_body: str) -> str:
-    return fix_markdown(remove_unindented_signatures(func_body))
-
-
-def fix_markdown(func_body: str) -> str:
-    return re.sub("`{3}", "", func_body)
-
-
-def remove_unindented_signatures(code: str) -> str:
-    regex = r"^def\s+\w+\s*\("
-
-    before_signature = []
-    after_signature = []
-    signature_found = False
-
-    for line in code.split("\n"):
-        if re.match(regex, line):
-            signature_found = True
-            continue
-
-        if signature_found:
-            after_signature.append(line)
-        else:
-            if not line.startswith("    ") and line.strip():
-                line = "    " + line
-            before_signature.append(line)
-
-    return "\n".join(before_signature + after_signature)
-
-
-def py_fix_indentation(func_body: str) -> str:
-    func_body = fix_turbo_response(func_body)
-    """
-    3 cases:
-        1. good syntax
-        2. first line not good
-        3. entire body not good
-    """
-    def parse_indent_rec(f_body: str, cur_state: int) -> str:
-        f_body = fix_markdown(f_body)
-        if cur_state > 1:
-            return f_body
-        code = f'{DUMMY_FUNC_SIG}\n{f_body}\n{DUMMY_FUNC_CALL}'
-        try:
-            exec(code)
-            return f_body
-        except (IndentationError, SyntaxError):
-            p_func = handle_first_line_indent if cur_state == 0 else handle_entire_body_indent
-            return parse_indent_rec(p_func(func_body), cur_state + 1)
-        except Exception:
-            return f_body
-    return parse_indent_rec(func_body, 0)
-
-
-def py_is_syntax_valid(code: str) -> bool:
-    try:
-        ast.parse(code)
-        return True
-    except Exception:
-        return False
