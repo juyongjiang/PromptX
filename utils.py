@@ -59,8 +59,9 @@ def enumerate_resume(dataset, results_path):
 
 def resume_success_count(results_path) -> int:
     count = 0
-    with jsonlines.open(results_path) as reader:
-        for item in reader:
-            if "is_solved" in item and item["is_solved"]:
-                count += 1
+    if os.path.exists(results_path):
+        with jsonlines.open(results_path) as reader:
+            for item in reader:
+                if "is_solved" in item and item["is_solved"]:
+                    count += 1
     return count

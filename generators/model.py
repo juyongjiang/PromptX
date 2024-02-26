@@ -1,7 +1,7 @@
 from typing import List, Union, Optional, Literal
 import os
 import openai
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = "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" # os.getenv("OPENAI_API_KEY")
 import dataclasses
 from tenacity import (
     retry,

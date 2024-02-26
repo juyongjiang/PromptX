@@ -1,7 +1,7 @@
 import re
 from generators.model import ModelBase
 from .utils import Generator, generic_generate_func_impl, generic_generate_internal_tests, generic_generate_self_reflection, generate_with_accumulated_context
-from .parse import parse_code_block, add_code_block
+from .utils import parse_code_block, add_code_block
 
 from typing import List, Optional, Union
 

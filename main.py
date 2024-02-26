@@ -43,12 +43,12 @@ if __name__ == "__main__":
     if not os.path.exists(args.root_dir): # trajectory/
         os.makedirs(args.root_dir)
     # get the dataset name
-    dataset_name = os.path.basename(args.dataset_path).replace("jsonl", "") # humaneval-py-test.jsonl -> humaneval-py-test
+    dataset_name = os.path.basename(args.dataset_path).replace("jsonl", "").strip(".") # humaneval-py-test.jsonl -> humaneval-py-test
     # check if log path already exists
     log_dir = os.path.join(args.root_dir, args.run_name) # test_reflexion_gpt3
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
-    log_path = os.path.join(log_dir, f"{dataset_name}_{args.strategy}_{args.max_iters}_{args.model}_pass_at_k_{args.pass_at_k}_{args.language}.jsonl")
+    log_path = os.path.join(log_dir, f"{dataset_name}_{args.strategy}_{args.model}_{args.language}_{args.max_iters}_pass_at_k_{args.pass_at_k}.jsonl")
 
     # print starting message
     if args.verbose:

@@ -63,7 +63,7 @@ def generic_generate_func_impl(
             message = f"[previous impl]:\n{add_code_block(prev_func_impl)}\n\n[unit test results from previous impl]:\n{feedback}\n\n[reflection on previous impl]:\n{self_reflection}\n\n[improved impl]:\n{func_sig}"
             prompt = f"{reflection_chat_instruction}\n{code_block_instruction}"
             # func_bodies is a really bad name, as it can also be just 1 string
-            print_messages(prompt + f"{reflection_few_shot}\n", message)
+            print_messages(prompt + "\n" + f"{reflection_few_shot}\n", message)
             messages = [
                 Message(
                     role="system",

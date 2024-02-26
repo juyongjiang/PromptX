@@ -1,10 +1,10 @@
 from generators.model import ModelBase, message_to_str
 from .utils import Generator, generic_generate_func_impl, generic_generate_internal_tests, generic_generate_self_reflection, generate_with_accumulated_context
+from .utils import parse_code_block, add_code_block
 
 from typing import Optional, List, Union
 import ast
 import re
-from .parse import parse_code_block, add_code_block
 
 PY_SIMPLE_COMPLETION_INSTRUCTION = "# Write the body of this function only."
 PY_REFLEXION_COMPLETION_INSTRUCTION = "You are a Python writing assistant. You will be given your past function implementation, a series of unit tests, and a hint to change the implementation appropriately. Write your full implementation (restate the function signature).\n\n-----"
