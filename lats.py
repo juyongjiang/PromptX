@@ -220,8 +220,8 @@ def run_mcts(
                 if is_solved:
                     break
                 
-                print(reward_internal)
-                print(reward_real)
+                # print(reward_internal)
+                # print(reward_real)
                 reward = reward_internal + reward_real
                 child.update(reward)
 
